@@ -1,0 +1,72 @@
+{
+  "intent": "check_order_status",
+  "intent_description": "Customer wants to know the status of a specific order.",
+  "support": 21,
+  "variants": [
+    {
+      "path": [
+        "lookup_order!"
+      ],
+      "count": 9
+    },
+    {
+      "path": [
+        "lookup_order",
+        "track_shipment"
+      ],
+      "count": 6
+    },
+    {
+      "path": [
+        "track_shipment"
+      ],
+      "count": 3
+    },
+    {
+      "path": [
+        "lookup_order"
+      ],
+      "count": 1
+    },
+    {
+      "path": [
+        "lookup_order",
+        "track_shipment",
+        "check_refund_eligibility"
+      ],
+      "count": 1
+    },
+    {
+      "path": [
+        "track_shipment",
+        "lookup_order",
+        "send_email"
+      ],
+      "count": 1
+    }
+  ],
+  "tools": {
+    "check_refund_eligibility": [
+      "order_id"
+    ],
+    "lookup_order": [
+      "order_id"
+    ],
+    "send_email": [
+      "to",
+      "subject",
+      "body"
+    ],
+    "track_shipment": [
+      "order_id"
+    ]
+  },
+  "model": "groq/qwen/qwen3.8-27b",
+  "created_at": "2026-10-01T00:56:24+00:00",
+  "status": "candidate",
+  "guard": {
+    "redacted_values": 1,
+    "pattern_findings": []
+  },
+  "validation": null
+}

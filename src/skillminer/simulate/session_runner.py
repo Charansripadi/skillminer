@@ -26,17 +26,31 @@ class SessionResult:
     error: str | None = None
 
 
+class DailyQuotaExceeded(RuntimeError):
+    """The provider's per-day limit is used up; waiting seconds or minutes will not help."""
+
+
 def _is_rate_limit(error: Exception) -> bool:
     text = f"{type(error).__name__} {error}".lower()
     return "ratelimit" in text or "rate limit" in text or "429" in text
 
 
+def _is_daily_limit(error: Exception) -> bool:
+    text = str(error).lower()
+    return "per day" in text or "(tpd)" in text or "(rpd)" in text
+
+
 async def _with_backoff(make_call, *, retries: int, base_delay: float):
-    """Await make_call(), retrying with growing delays when the provider rate-limits us."""
+    """Await make_call(), retrying with growing delays on per-minute rate limits.
+
+    Daily limits raise DailyQuotaExceeded straight away instead of retrying pointlessly.
+    """
     for attempt in range(retries + 1):
         try:
             return await make_call()
         except Exception as e:  # providers raise different exception types for 429s
+            if _is_rate_limit(e) and _is_daily_limit(e):
+                raise DailyQuotaExceeded(str(e)[:300]) from e
             if not _is_rate_limit(e) or attempt == retries:
                 raise
             delay = base_delay * (attempt + 1)
@@ -74,8 +88,10 @@ async def run_scenarios(
                 if message is None:
                     break
                 transcript.append(("customer", message))
-                reply = await _with_backoff(lambda: _agent_turn(runner, session, message),
-                                            retries=retries, base_delay=base_delay)
+                # The agent turn is NOT retried here: tools may already have run (a refund, an
+                # email), and re-sending the message would repeat them. Rate limits are retried
+                # per model call inside the agent's model instead (skillminer.llm.RetryingLiteLlm).
+                reply = await _agent_turn(runner, session, message)
                 transcript.append(("agent", reply))
             result = SessionResult(scenario.id, turns=len(transcript) // 2, ok=True)
         except Exception as e:

@@ -44,12 +44,12 @@ def main() -> None:
     from support_agent.scenarios import build_scenarios
     from support_agent.tools import reset_orders
 
+    from skillminer.llm import provider_kwargs
     from skillminer.simulate import UserSimulator, run_scenarios
 
     litellm.suppress_debug_info = True
     sim_model = os.getenv("SKILLMINER_SIM_MODEL", "groq/openai/gpt-oss-20b")
-    sim_kwargs = {"include_reasoning": False} if sim_model.startswith("groq/openai/gpt-oss") else {}
-    simulator = UserSimulator(sim_model, temperature=0.9, **sim_kwargs)
+    simulator = UserSimulator(sim_model, temperature=0.9, **provider_kwargs(sim_model))
 
     scenarios = build_scenarios(args.n, seed=args.seed)
     print(f"Running {len(scenarios)} simulated conversations")

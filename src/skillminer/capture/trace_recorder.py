@@ -102,8 +102,18 @@ class TraceRecorderPlugin(BasePlugin):
         return None
 
     async def after_run_callback(self, *, invocation_context):
+        self._finish(invocation_context)
+
+    async def on_run_error_callback(self, *, invocation_context, error):
+        # A run that crashes (e.g. the model call fails) may already have executed tools. Record it,
+        # or those side effects would be invisible and the next run would look inexplicable.
+        self._finish(invocation_context, error=error)
+
+    # --- helpers ------------------------------------------------------------------------
+
+    def _finish(self, invocation_context, error: Exception | None = None) -> None:
         run = self._runs.pop(invocation_context.invocation_id, None)
-        if run is None:
+        if run is None:  # already written (after_run and on_run_error can both fire)
             return
         session = invocation_context.session
         agent = invocation_context.agent
@@ -120,14 +130,13 @@ class TraceRecorderPlugin(BasePlugin):
             "user_message": run.user_message,
             "steps": run.steps,
             "final_response": run.final_response,
-            "outcome": "completed" if run.final_response else "incomplete",
+            "outcome": "error" if error else ("completed" if run.final_response else "incomplete"),
+            "error": f"{type(error).__name__}: {str(error)[:300]}" if error else None,
             # Optional labels set by whoever created the session (e.g. the simulator's ground-truth
             # intent). SkillMiner never mines these; they are only used to score the miner.
             "meta": dict(session.state.get(META_STATE_KEY) or {}),
         }
         self._write(trace)
-
-    # --- helpers ------------------------------------------------------------------------
 
     def _run(self, invocation_id: str) -> _RunState:
         # Tool hooks can fire for an invocation we did not see start (e.g. plugin added mid-run).

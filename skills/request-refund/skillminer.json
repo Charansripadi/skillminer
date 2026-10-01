@@ -1,0 +1,117 @@
+{
+  "intent": "request_refund",
+  "intent_description": "Customer requests a refund for a purchased item.",
+  "support": 19,
+  "variants": [
+    {
+      "path": [
+        "lookup_order",
+        "check_refund_eligibility",
+        "issue_refund",
+        "send_email"
+      ],
+      "count": 6
+    },
+    {
+      "path": [
+        "check_refund_eligibility",
+        "issue_refund",
+        "send_email"
+      ],
+      "count": 3
+    },
+    {
+      "path": [
+        "lookup_order",
+        "check_refund_eligibility"
+      ],
+      "count": 2
+    },
+    {
+      "path": [
+        "check_refund_eligibility"
+      ],
+      "count": 2
+    },
+    {
+      "path": [
+        "check_refund_eligibility",
+        "track_shipment"
+      ],
+      "count": 1
+    },
+    {
+      "path": [
+        "lookup_order",
+        "check_refund_eligibility",
+        "track_shipment",
+        "issue_refund",
+        "send_email"
+      ],
+      "count": 1
+    },
+    {
+      "path": [
+        "lookup_order",
+        "check_refund_eligibility",
+        "issue_refund",
+        "send_email",
+        "lookup_order",
+        "track_shipment",
+        "lookup_order",
+        "check_refund_eligibility"
+      ],
+      "count": 1
+    },
+    {
+      "path": [
+        "lookup_order",
+        "check_refund_eligibility",
+        "send_email"
+      ],
+      "count": 1
+    },
+    {
+      "path": [
+        "issue_refund",
+        "send_email"
+      ],
+      "count": 1
+    },
+    {
+      "path": [
+        "send_email"
+      ],
+      "count": 1
+    }
+  ],
+  "tools": {
+    "check_refund_eligibility": [
+      "order_id"
+    ],
+    "issue_refund": [
+      "order_id",
+      "amount",
+      "reason"
+    ],
+    "lookup_order": [
+      "order_id"
+    ],
+    "send_email": [
+      "to",
+      "subject",
+      "body"
+    ],
+    "track_shipment": [
+      "order_id"
+    ]
+  },
+  "model": "groq/qwen/qwen3.8-27b",
+  "created_at": "2026-10-01T00:57:26+00:00",
+  "status": "candidate",
+  "guard": {
+    "redacted_values": 0,
+    "pattern_findings": []
+  },
+  "validation": null
+}

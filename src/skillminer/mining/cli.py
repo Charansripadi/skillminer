@@ -56,6 +56,7 @@ def _mine_with_llm(episodes, args) -> MiningResult:
     from dotenv import load_dotenv
 
     from ..simulate.session_runner import _with_backoff
+    from ..llm import provider_kwargs
     from .intents import IntentLabeler
 
     load_dotenv(args.env_file) if args.env_file else load_dotenv()
@@ -64,8 +65,7 @@ def _mine_with_llm(episodes, args) -> MiningResult:
         logging.getLogger(noisy).setLevel(logging.ERROR)
 
     model = args.model or os.getenv("SKILLMINER_SIM_MODEL", "groq/openai/gpt-oss-20b")
-    extra = {"include_reasoning": False} if model.startswith("groq/openai/gpt-oss") else {}
-    labeler = IntentLabeler(model, cache_path=args.cache, **extra)
+    labeler = IntentLabeler(model, cache_path=args.cache, **provider_kwargs(model))
     active = [e for e in episodes if e.has_actions]
     todo = sum(e.session_id not in labeler.labels for e in active)
     print(f"Labelling intents with {model}: {todo} new conversations, {len(active) - todo} cached")
