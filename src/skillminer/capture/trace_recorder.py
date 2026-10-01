@@ -22,6 +22,7 @@ from typing import Any
 from google.adk.plugins.base_plugin import BasePlugin
 
 SCHEMA_VERSION = 1
+META_STATE_KEY = "skillminer_meta"  # session.state key whose dict is copied into trace["meta"]
 MAX_RESULT_CHARS = 2000  # keep trace files small; full tool results are rarely needed for mining
 
 
@@ -120,6 +121,9 @@ class TraceRecorderPlugin(BasePlugin):
             "steps": run.steps,
             "final_response": run.final_response,
             "outcome": "completed" if run.final_response else "incomplete",
+            # Optional labels set by whoever created the session (e.g. the simulator's ground-truth
+            # intent). SkillMiner never mines these; they are only used to score the miner.
+            "meta": dict(session.state.get(META_STATE_KEY) or {}),
         }
         self._write(trace)
 

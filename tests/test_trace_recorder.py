@@ -5,37 +5,16 @@ offline and deterministic.
 """
 
 import json
-from typing import AsyncGenerator
 
 from google.adk import Agent, Runner
 from google.adk.apps import App
-from google.adk.models.base_llm import BaseLlm
-from google.adk.models.llm_response import LlmResponse
 from google.adk.sessions import InMemorySessionService
 from google.genai import types
 
 from skillminer.capture import TraceRecorderPlugin
 from skillminer.capture.show import tool_path
 
-
-def call(name: str, **args) -> types.Content:
-    return types.Content(role="model", parts=[types.Part(function_call=types.FunctionCall(name=name, args=args))])
-
-
-def say(text: str) -> types.Content:
-    return types.Content(role="model", parts=[types.Part(text=text)])
-
-
-class ScriptedLlm(BaseLlm):
-    """Returns the next scripted response on every model call."""
-
-    script: list[types.Content]
-    calls: int = 0
-
-    async def generate_content_async(self, llm_request, stream: bool = False) -> AsyncGenerator[LlmResponse, None]:
-        content = self.script[self.calls]
-        self.calls += 1
-        yield LlmResponse(content=content)
+from fakes import ScriptedLlm, call, say
 
 
 def lookup_order(order_id: str) -> dict:
