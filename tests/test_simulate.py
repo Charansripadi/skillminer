@@ -97,3 +97,20 @@ async def test_other_errors_fail_the_scenario_but_not_the_run(tmp_path):
 
     assert [r.ok for r in results] == [False, True]
     assert "boom" in results[0].error
+
+
+def test_trailing_done_sends_the_message_then_ends():
+    sim = UserSimulator(model="unused")
+    sc = Scenario(id="d1", goal="g", persona="p")
+    assert sim._handle_done(sc, "The new address is 5 Oak Street, Leeds.DONE") == "The new address is 5 Oak Street, Leeds."
+    assert sc.id in sim._finishing
+    assert sim._handle_done(Scenario(id="d2", goal="g", persona="p"), "DONE") is None
+    assert sim._handle_done(Scenario(id="d3", goal="g", persona="p"), "Where is my order?") == "Where is my order?"
+
+
+async def test_finishing_scenario_stops_without_calling_the_model():
+    sim = UserSimulator(model="this-model-does-not-exist")
+    sc = Scenario(id="d4", goal="g", persona="p")
+    sim._finishing.add(sc.id)
+    assert await sim.next_message(sc, [("customer", "bye"), ("agent", "ok")]) is None
+    assert sc.id not in sim._finishing

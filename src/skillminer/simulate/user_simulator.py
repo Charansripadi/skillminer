@@ -45,12 +45,16 @@ class UserSimulator:
     def __init__(self, model: str, **completion_kwargs: Any):
         self.model = model
         self.completion_kwargs = completion_kwargs
+        self._finishing: set[str] = set()  # scenarios whose last message carried a trailing DONE
 
     async def next_message(self, scenario: Scenario, transcript: list[tuple[str, str]]) -> str | None:
         """Return the customer's next message, or None when the conversation should end.
 
         ``transcript`` is a list of ("customer" | "agent", text) pairs so far.
         """
+        if scenario.id in self._finishing:  # previous message ended with DONE: stop without calling the model
+            self._finishing.discard(scenario.id)
+            return None
         user_turns = sum(1 for who, _ in transcript if who == "customer")
         if user_turns >= scenario.max_turns:
             return None
@@ -65,6 +69,18 @@ class UserSimulator:
 
         response = await litellm.acompletion(model=self.model, messages=messages, **self.completion_kwargs)
         text = (response.choices[0].message.content or "").strip().strip('"')
+        return self._handle_done(scenario, text)
+
+    def _handle_done(self, scenario: Scenario, text: str) -> str | None:
+        """Interpret the DONE signal, including when the model glues it onto a final message.
+
+        "DONE"                       -> end now
+        "Thanks, that's all. DONE"   -> send "Thanks, that's all." and end after the agent replies
+        """
+        if text.upper().endswith(DONE):
+            text = text[: -len(DONE)].strip()
+            if text:
+                self._finishing.add(scenario.id)
         if not text or text.upper().startswith(DONE):
             return None
         return text
