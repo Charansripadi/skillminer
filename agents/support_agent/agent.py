@@ -1,7 +1,11 @@
 import os
+from pathlib import Path
 
 from google.adk import Agent
+from google.adk.apps import App
 from google.adk.models.lite_llm import LiteLlm
+
+from skillminer.capture import TraceRecorderPlugin
 
 from .tools import (
     check_refund_eligibility,
@@ -41,4 +45,14 @@ root_agent = Agent(
         update_address,
         send_email,
     ],
+)
+
+# ADK picks up `app` before `root_agent`. Its name must match this folder's name.
+# Traces go to <project root>/traces/, whichever folder adk web is started from.
+TRACE_DIR = Path(__file__).resolve().parents[2] / "traces"
+
+app = App(
+    name="support_agent",
+    root_agent=root_agent,
+    plugins=[TraceRecorderPlugin(trace_dir=TRACE_DIR)],
 )
