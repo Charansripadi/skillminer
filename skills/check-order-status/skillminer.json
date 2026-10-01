@@ -68,5 +68,10 @@
     "redacted_values": 1,
     "pattern_findings": []
   },
-  "validation": null
+  "validation": {
+    "run": "pilot",
+    "decision": "promising",
+    "p_value": 0.5,
+    "pairs": 8
+  }
 }
